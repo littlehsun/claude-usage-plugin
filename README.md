@@ -1,7 +1,7 @@
-# Claude Code Rate Limit Statusline ⚡
+# Claude Code Enhanced Statusline ⚡
 
-A lightweight, zero-cost, and 100% accurate rate limit statusline for **Claude Code** (Pro / Max tiers).
-專為 Claude Code 設計的速率限制狀態列整合方案，精準顯示 Pro / Max 方案的 5 小時與 7 天額度。
+A lightweight statusline for **Claude Code** that displays model, git branch, context usage, concurrent sessions, and accurate rate limits for Pro / Max tiers.
+專為 Claude Code 設計的增強狀態列，顯示模型名稱、Git 分支、Context 使用率、並行 Session 數，以及 Pro / Max 方案的精準速率限制。
 
 ## 💡 為什麼需要這個專案？ (Why?)
 

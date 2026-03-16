@@ -1,7 +1,6 @@
-# Claude Code Rate Limit Statusline ⚡
+# Claude Code Enhanced Statusline ⚡
 
-A lightweight, zero-cost, and 100% accurate rate limit statusline for **Claude Code** (Pro / Max tiers).
-Accurately displays 5-hour and 7-day quotas for Claude Code Pro / Max plans.
+A lightweight statusline for **Claude Code** that displays model, git branch, context usage, concurrent sessions, and accurate rate limits for Pro / Max tiers.
 
 ## 💡 Why This Project?
 
