@@ -1,7 +1,6 @@
 #!/bin/bash
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROXY_PID_FILE="/tmp/claude_proxy.pid"
 
 # ==========================================
 # 步驟 1：自動檢查並安裝必備工具 (jq, node)
@@ -31,52 +30,12 @@ fi
 echo "✅ node 已安裝，略過！"
 
 # ==========================================
-# 步驟 2：啟動 Proxy 腳本
+# 步驟 2：驗證 Proxy 腳本存在
 # ==========================================
-echo "⚙️ 正在啟動 Proxy 代理伺服器..."
-
 if [ ! -f "$SCRIPT_DIR/claude-proxy.js" ]; then
     echo -e "\033[31m[錯誤] 找不到 $SCRIPT_DIR/claude-proxy.js\033[0m"
     exit 1
 fi
-
-# 用 PID 檔案精準停掉舊的 proxy
-if [ -f "$PROXY_PID_FILE" ]; then
-    OLD_PID=$(cat "$PROXY_PID_FILE")
-    if kill -0 "$OLD_PID" 2>/dev/null; then
-        kill "$OLD_PID" 2>/dev/null
-    fi
-    rm -f "$PROXY_PID_FILE"
-fi
-
-nohup node "$SCRIPT_DIR/claude-proxy.js" > /dev/null 2>&1 &
-PROXY_PID=$!
-echo "$PROXY_PID" > "$PROXY_PID_FILE"
-
-# 確認 proxy 真的啟動成功
-sleep 1
-if ! kill -0 "$PROXY_PID" 2>/dev/null; then
-    echo -e "\033[31m[錯誤] Proxy 啟動失敗。\033[0m"
-    rm -f "$PROXY_PID_FILE"
-
-    # 檢查 Port 19999 是否被佔用
-    PORT_PID=$(lsof -ti :19999 2>/dev/null)
-    if [ -n "$PORT_PID" ]; then
-        PORT_CMD=$(ps -p "$PORT_PID" -o comm= 2>/dev/null)
-        echo -e "\033[33m⚠️  Port 19999 已被其他 process 佔用（PID: $PORT_PID, 程式: $PORT_CMD）\033[0m"
-        echo ""
-        echo "💡 建議執行以下指令來釋放 Port 並重新啟動："
-        echo "   kill $PORT_PID && bash $0"
-        echo ""
-        echo "   或強制終止："
-        echo "   kill -9 $PORT_PID && bash $0"
-    else
-        echo "💡 Port 19999 未被佔用，請檢查 claude-proxy.js 是否有其他錯誤。"
-        echo "   手動測試：node $SCRIPT_DIR/claude-proxy.js"
-    fi
-    exit 1
-fi
-echo "✅ 代理伺服器已在背景無痕運行！(Port: 19999, PID: $PROXY_PID)"
 
 # ==========================================
 # 步驟 3：複製 Statusline 腳本
@@ -92,6 +51,9 @@ mkdir -p ~/.claude
 cp "$SCRIPT_DIR/statusline-command.sh" ~/.claude/statusline-command.sh
 chmod +x ~/.claude/statusline-command.sh
 echo "✅ Statusline 腳本設定完成！"
+
+cp "$SCRIPT_DIR/claude-proxy.js" ~/.claude/claude-proxy.js
+echo "✅ Proxy 腳本已複製至 ~/.claude/claude-proxy.js！"
 
 # ==========================================
 # 偵測使用者 Shell Profile
@@ -113,15 +75,50 @@ SHELL_PROFILE=$(detect_shell_profile)
 # ==========================================
 echo ""
 echo "🎉 所有安裝皆已完成！"
-echo "👉 下一步，請在你的終端機輸入以下指令啟動 Claude："
-echo "   export ANTHROPIC_BASE_URL=\"http://localhost:19999\""
+echo "👉 下一步，請將 claude wrapper 寫入 shell profile，之後直接執行 claude 即可："
 echo "   claude"
 echo ""
-PROXY_SCRIPT="$SCRIPT_DIR/claude-proxy.js"
-AUTOSTART_SNIPPET="# claude-proxy auto-start
-if pgrep -f \"claude-proxy.js\" > /dev/null || { nohup node $PROXY_SCRIPT > /dev/null 2>&1 & sleep 0.5 && pgrep -f \"claude-proxy.js\" > /dev/null; }; then
-    export ANTHROPIC_BASE_URL=\"http://localhost:19999\"
-fi"
+AUTOSTART_SNIPPET='# claude-proxy wrapper - 執行 claude 時才啟動 proxy，結束後自動停止
+claude() {
+    local PROXY_PID_FILE="/tmp/claude_proxy.pid"
+    local LOCK_DIR="/tmp/claude_proxy_locks"
+    local LOCK_FILE="$LOCK_DIR/$$"
+    local PROXY_SCRIPT="$HOME/.claude/claude-proxy.js"
+
+    mkdir -p "$LOCK_DIR"
+
+    # 清除 stale locks（PID 已不存在的）
+    if [ -n "$(ls -A "$LOCK_DIR" 2>/dev/null)" ]; then
+        for f in "$LOCK_DIR"/*; do
+            [ -f "$f" ] && ! kill -0 "$(basename "$f")" 2>/dev/null && rm -f "$f"
+        done
+    fi
+
+    touch "$LOCK_FILE"
+
+    # 若 proxy 尚未啟動則啟動，否則沿用現有的
+    local _PROXY_PID
+    _PROXY_PID=$(cat "$PROXY_PID_FILE" 2>/dev/null)
+    if [ -z "$_PROXY_PID" ] || ! kill -0 "$_PROXY_PID" 2>/dev/null; then
+        nohup node "$PROXY_SCRIPT" > /dev/null 2>&1 &
+        echo $! > "$PROXY_PID_FILE"
+    fi
+
+    _claude_cleanup() {
+        rm -f "$LOCK_FILE"
+        # lock 目錄空了才代表沒有其他 claude 在跑
+        if [ -z "$(ls -A "$LOCK_DIR" 2>/dev/null)" ]; then
+            kill "$(cat "$PROXY_PID_FILE" 2>/dev/null)" 2>/dev/null || pkill -f "claude-proxy.js" 2>/dev/null
+            rm -f "$PROXY_PID_FILE"
+            rmdir "$LOCK_DIR" 2>/dev/null
+        fi
+        trap - INT TERM
+    }
+    trap _claude_cleanup INT TERM
+
+    ANTHROPIC_BASE_URL="http://localhost:19999" command claude "$@"
+    _claude_cleanup
+}'
 
 if [ -n "$SHELL_PROFILE" ]; then
     echo -n "💡 是否將 Proxy 自動啟動寫入 $SHELL_PROFILE？(y/N) "
