@@ -125,6 +125,12 @@ if [ -n "$SHELL_PROFILE" ]; then
     read -r REPLY
     case "$REPLY" in
         [yY])
+            if grep -q "# claude-proxy wrapper" "$SHELL_PROFILE" 2>/dev/null; then
+                # 移除舊的 claude wrapper（從標記注解到函式結尾的 `}`）
+                awk '/^# claude-proxy wrapper/{found=1; next} found && /^}/{found=0; next} found{next} {print}' \
+                    "$SHELL_PROFILE" > /tmp/_claude_profile_tmp && mv /tmp/_claude_profile_tmp "$SHELL_PROFILE"
+                echo "🔄 偵測到已存在的 claude wrapper，已取代為最新版本！"
+            fi
             echo "$AUTOSTART_SNIPPET" >> "$SHELL_PROFILE"
             echo "✅ 已寫入 $SHELL_PROFILE！"
             echo "👉 請執行以下指令讓設定立即生效："
