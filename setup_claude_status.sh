@@ -118,13 +118,57 @@ claude() {
 
     ANTHROPIC_BASE_URL="http://localhost:19999" command claude "$@"
     _claude_cleanup
-}'
+}
+# end claude-proxy wrapper'
 
 if [ -n "$SHELL_PROFILE" ]; then
     echo -n "💡 是否將 Proxy 自動啟動寫入 $SHELL_PROFILE？(y/N) "
     read -r REPLY
     case "$REPLY" in
         [yY])
+            if grep -q "# claude-proxy wrapper" "$SHELL_PROFILE" 2>/dev/null; then
+                # 移除舊的 claude wrapper（介於開始與結束標記之間的區塊）
+                tmp_profile="$(mktemp "${TMPDIR:-/tmp}/_claude_profile_tmp.XXXXXX")" || {
+                     echo "❌ 無法建立暫存檔，請稍後再試。"
+                     exit 1
+                 }
+                 trap 'rm -f "$tmp_profile"' EXIT
+                
+                if awk '
+                    /^# claude-proxy wrapper/ { in_block = 1; next }
+                    /^# end claude-proxy wrapper/ {
+                        if (in_block) {
+                            in_block = 0;
+                            next;
+                        }
+                    }
+                    {
+                        if (!in_block) {
+                            print;
+                        }
+                    }
+                    END {
+                        if (in_block) {
+                            print "Warning: failed to fully remove existing claude wrapper: missing end marker # end claude-proxy wrapper" > "/dev/stderr";
+                            exit 1;
+                        }
+                    }
+                '  "$SHELL_PROFILE" > "$tmp_profile"; then
+                # awk 成功才覆蓋檔案並解除 trap（保留原始檔案權限）
+                if [[ "$OSTYPE" == "darwin"* ]]; then
+                    chmod "$(stat -f "%Lp" "$SHELL_PROFILE")" "$tmp_profile"
+                else
+                    chmod "$(stat -c "%a" "$SHELL_PROFILE")" "$tmp_profile"
+                fi
+                mv "$tmp_profile" "$SHELL_PROFILE" && trap - EXIT
+                echo "🔄 偵測到已存在的 claude wrapper，已取代為最新版本！"
+               else
+                   # awk 失敗（例如找不到結尾標記）時的處理
+                   echo "❌ 移除舊版 wrapper 發生錯誤，安裝已中斷。"
+                   echo "👉 請手動開啟 $SHELL_PROFILE 清理不完整的 claude-proxy wrapper 區塊後再試一次。"
+                   exit 1
+                fi
+            fi
             echo "$AUTOSTART_SNIPPET" >> "$SHELL_PROFILE"
             echo "✅ 已寫入 $SHELL_PROFILE！"
             echo "👉 請執行以下指令讓設定立即生效："
