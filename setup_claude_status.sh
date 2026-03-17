@@ -128,7 +128,13 @@ if [ -n "$SHELL_PROFILE" ]; then
         [yY])
             if grep -q "# claude-proxy wrapper" "$SHELL_PROFILE" 2>/dev/null; then
                 # 移除舊的 claude wrapper（介於開始與結束標記之間的區塊）
-                awk '
+                tmp_profile="$(mktemp "${TMPDIR:-/tmp}/_claude_profile_tmp.XXXXXX")" || {
+                     echo "❌ 無法建立暫存檔，請稍後再試。"
+                     exit 1
+                 }
+                 trap 'rm -f "$tmp_profile"' EXIT
+                
+                if awk '
                     /^# claude-proxy wrapper/ { in_block = 1; next }
                     /^# end claude-proxy wrapper/ {
                         if (in_block) {
@@ -147,9 +153,17 @@ if [ -n "$SHELL_PROFILE" ]; then
                             exit 1;
                         }
                     }
-                ' "$SHELL_PROFILE" > /tmp/_claude_profile_tmp && mv /tmp/_claude_profile_tmp "$SHELL_PROFILE"
+                '  "$SHELL_PROFILE" > "$tmp_profile"; then
+                # 如果awk成功，才執行覆蓋檔案和解除trap
+                mv "$tmp_profile" "$SHELL_PROFILE" && trap - EXIT
+                # 成功替換後，解除 trap
                 echo "🔄 偵測到已存在的 claude wrapper，已取代為最新版本！"
-            fi
+               else
+                   # awk 失敗（例如找不到結尾標記）時的處理
+                   echo "❌ 移除舊版 wrapper 發生錯誤，安裝已中斷。"
+                   echo "👉 請手動開啟 $SHELL_PROFILE 清理不完整的 claude-proxy wrapper 區塊後再試一次。"
+                   exit 1
+                fi
             echo "$AUTOSTART_SNIPPET" >> "$SHELL_PROFILE"
             echo "✅ 已寫入 $SHELL_PROFILE！"
             echo "👉 請執行以下指令讓設定立即生效："
