@@ -154,9 +154,13 @@ if [ -n "$SHELL_PROFILE" ]; then
                         }
                     }
                 '  "$SHELL_PROFILE" > "$tmp_profile"; then
-                # 如果awk成功，才執行覆蓋檔案和解除trap
+                # awk 成功才覆蓋檔案並解除 trap（保留原始檔案權限）
+                if [[ "$OSTYPE" == "darwin"* ]]; then
+                    chmod "$(stat -f "%Lp" "$SHELL_PROFILE")" "$tmp_profile"
+                else
+                    chmod "$(stat -c "%a" "$SHELL_PROFILE")" "$tmp_profile"
+                fi
                 mv "$tmp_profile" "$SHELL_PROFILE" && trap - EXIT
-                # 成功替換後，解除 trap
                 echo "🔄 偵測到已存在的 claude wrapper，已取代為最新版本！"
                else
                    # awk 失敗（例如找不到結尾標記）時的處理
@@ -164,6 +168,7 @@ if [ -n "$SHELL_PROFILE" ]; then
                    echo "👉 請手動開啟 $SHELL_PROFILE 清理不完整的 claude-proxy wrapper 區塊後再試一次。"
                    exit 1
                 fi
+            fi
             echo "$AUTOSTART_SNIPPET" >> "$SHELL_PROFILE"
             echo "✅ 已寫入 $SHELL_PROFILE！"
             echo "👉 請執行以下指令讓設定立即生效："
