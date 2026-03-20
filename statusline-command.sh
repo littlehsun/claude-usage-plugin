@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 input=$(cat)
 cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd')
 branch=$(git -C "$cwd" --no-optional-locks symbolic-ref --short HEAD 2>/dev/null)
@@ -29,16 +30,16 @@ else
     ctx_part=""
 fi
 
-# Session count from /tmp/claude_proxy_locks
-LOCK_DIR="/tmp/claude_proxy_locks"
+# Session count from same dir as this script
+LOCK_DIR="$SCRIPT_DIR/claude_proxy_locks"
 session_part=""
 if [ -d "$LOCK_DIR" ]; then
     SESSION_COUNT=$(find "$LOCK_DIR" -maxdepth 1 -type f 2>/dev/null | wc -l | tr -d ' ')
     [ "$SESSION_COUNT" -gt 0 ] && session_part=" | ✷${SESSION_COUNT}"
 fi
 
-# Rate limit from /tmp/claude_rate_limit.json
-RL_FILE="/tmp/claude_rate_limit.json"
+# Rate limit from same dir as this script
+RL_FILE="$SCRIPT_DIR/claude_rate_limit.json"
 rate_part=""
 if [ -f "$RL_FILE" ] && command -v jq &>/dev/null; then
     U5H=$(jq -r '.utilization_5h // empty' "$RL_FILE")

@@ -1,9 +1,10 @@
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
+const path = require('path');
 
-const PORT = 19999;
-const OUTPUT_FILE = '/tmp/claude_rate_limit.json';
+const PORT = parseInt(process.argv[2]) || 19999;
+const OUTPUT_FILE = path.join(__dirname, 'claude_rate_limit.json');
 
 http.createServer((clientReq, clientRes) => {
     const options = {
