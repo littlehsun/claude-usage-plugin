@@ -128,6 +128,6 @@ if [ -n "$U5H" ] && [ -n "$U7D" ]; then
     if [ -n "$RESET_7D_RAW" ] && [ -n "$RESET_TIME_7D" ]; then
         R7="${DIM} ⟳ ${RESET_TIME_7D}${RESET}"
     fi
-    printf "${DIM}5H${RESET} %s ${C5}%s%%${RESET}%s    ${DIM}7D${RESET} %s ${C7}%s%%${RESET}%s\n" \
+    printf "${DIM}5H${RESET} %s ${C5}%s%%${RESET}%s ${DIM}7D${RESET} %s ${C7}%s%%${RESET}%s\n" \
         "$BAR_5H" "$INT_5H" "$R5" "$BAR_7D" "$INT_7D" "$R7"
 fi
