@@ -53,7 +53,7 @@ if [[ "$OSTYPE" == "linux-gnu"* ]] && command -v gnome-shell &> /dev/null; then
     echo "偵測到 Ubuntu / GNOME 環境"
     echo ""
     echo "是否安裝 Ubuntu 狀態列 Rate Limit 指示器？"
-    echo "  功能：在 GNOME 頂部列顯示 ⚡ 8% | 1% ⟳2h30m"
+    echo "  功能：在 GNOME 頂部列顯示 ● 8%|1% ⟳2h30m"
     echo "  需要：gir1.2-ayatana-appindicator3-0.1"
     echo -n "安裝？ (y/N) "
     read -r INDICATOR_CHOICE

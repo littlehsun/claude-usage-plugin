@@ -67,9 +67,6 @@ chmod +x setup.sh
 bash ubuntu-indicator/install.sh
 ```
 
-安裝時會詢問：
-- **顯示位置**：靠左 或 靠右（在系統匣內的排序）
-
 **資料流：**
 
 ```

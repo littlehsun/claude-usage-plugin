@@ -70,9 +70,6 @@ Displays live usage in the GNOME system tray — visible even when Claude Code i
 bash ubuntu-indicator/install.sh
 ```
 
-During install, you'll be asked:
-- **Position**: left or right within the system tray
-
 **Data flow:**
 
 ```
