@@ -10,16 +10,8 @@ import html
 from pathlib import Path
 
 RATE_LIMITS_FILE = Path.home() / '.claude' / 'rate_limits_live.json'
-CONF_FILE = Path.home() / '.claude' / 'rate-indicator.conf'
 ICON_TMPS = ['/tmp/claude-rate-0.svg', '/tmp/claude-rate-1.svg']
 POLL_INTERVAL = 60  # seconds
-
-
-def load_ordering_index():
-    try:
-        return int(json.loads(CONF_FILE.read_text()).get('ordering_index', 0))
-    except Exception:
-        return 0
 
 COLORS = {
     'green':  '#00AF50',
@@ -55,7 +47,6 @@ class ClaudeRateIndicator:
             AppIndicator3.IndicatorCategory.APPLICATION_STATUS,
         )
         self.indicator.set_status(AppIndicator3.IndicatorStatus.ACTIVE)
-        self.indicator.set_ordering_index(load_ordering_index())
 
         self.menu = Gtk.Menu()
 
@@ -121,7 +112,7 @@ class ClaudeRateIndicator:
         now = int(time.time())
         cd5 = self._countdown(reset_5h, now)
 
-        label = f'⚡ {u5h}% | {u7d}% ⟳{cd5}'
+        label = f'⚡{u5h}%|{u7d}% ⟳{cd5}'
         max_pct = max(u5h, u7d)
         color = 'red' if max_pct >= 90 else 'yellow' if max_pct >= 70 else 'green'
         self._set_icon(label, color)

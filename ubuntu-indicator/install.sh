@@ -28,19 +28,6 @@ ICON_DEST="$HOME/.local/share/icons/claude-rate-indicator"
 mkdir -p "$ICON_DEST"
 cp "$SCRIPT_DIR/icons/"*.svg "$ICON_DEST/"
 
-# 3.5 位置偏好
-echo ""
-echo "顯示位置（在系統匣內的排序）："
-echo "  1) 靠左（預設）"
-echo "  2) 靠右"
-read -r -p "請選擇 (1/2，按 Enter 使用預設): " POS_CHOICE
-case "$POS_CHOICE" in
-    2) ORDER_INDEX=100 ;;
-    *) ORDER_INDEX=0   ;;
-esac
-echo "{\"ordering_index\": $ORDER_INDEX}" > "$HOME/.claude/rate-indicator.conf"
-echo "✅ 位置設定：$( [ "$ORDER_INDEX" -eq 0 ] && echo '靠左' || echo '靠右' )"
-
 # 4. Autostart
 echo "[4/4] 設定開機自動啟動..."
 mkdir -p "$HOME/.config/autostart"
