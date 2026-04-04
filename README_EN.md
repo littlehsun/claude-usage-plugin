@@ -34,8 +34,8 @@ Ubuntu GNOME top bar (optional):
 **Requirement:** `jq` (auto-installed by the setup script)
 
 ```bash
-chmod +x setup_claude_status.sh
-./setup_claude_status.sh
+chmod +x setup.sh
+./setup.sh
 ```
 
 During setup, you'll be asked:
@@ -84,7 +84,7 @@ Claude Code statusline → ~/.claude/rate_limits_live.json → GNOME indicator (
 | File | Description |
 |------|-------------|
 | `statusline-command.sh` | Main script — displays model, git status, context, rate limits; also writes `rate_limits_live.json` |
-| `setup_claude_status.sh` | Setup script — checks for `jq`, copies the script to Claude config dir, optionally installs the GNOME indicator |
+| `setup.sh` | Setup script — checks for `jq`, copies the script to Claude config dir, optionally installs the GNOME indicator |
 | `ubuntu-indicator/indicator.py` | GNOME AppIndicator3 daemon |
 | `ubuntu-indicator/install.sh` | Standalone indicator install script |
 | `ubuntu-indicator/icons/` | Green / yellow / red SVG icons |
