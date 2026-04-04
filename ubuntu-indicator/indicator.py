@@ -97,7 +97,7 @@ class ClaudeRateIndicator:
         data = self._read_data()
 
         if data is None:
-            self._set_icon('⚡ --', 'green')
+            self._set_icon('--', 'green')
             self.item_5h.set_label('⚡ 5H: no data')
             self.item_7d.set_label('📅 7D: no data')
             self.item_updated.set_label('Updated: --')
@@ -112,7 +112,7 @@ class ClaudeRateIndicator:
         now = int(time.time())
         cd5 = self._countdown(reset_5h, now)
 
-        label = f'⚡{u5h}%|{u7d}% ⟳{cd5}'
+        label = f'{u5h}%|{u7d}% ⟳{cd5}'
         max_pct = max(u5h, u7d)
         color = 'red' if max_pct >= 90 else 'yellow' if max_pct >= 70 else 'green'
         self._set_icon(label, color)
